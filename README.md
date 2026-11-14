@@ -1,6 +1,6 @@
 # PrivacyScreen
 
-**面向远程桌面使用场景的 Windows 一键隐私屏保**：本地屏幕显示持续运行的屏保，同时允许兼容的远程控制软件查看并操作真实桌面。
+**面向AI agent持续工作、远程桌面使用场景的 Windows 一键隐私屏保**：本地屏幕显示持续运行的屏保，同时允许兼容的远程控制软件查看并操作真实桌面。适用于Todesk，向日葵，uu远程，相对于自带的隐私屏功能可以在退出远程期间持续保护屏幕内容以及自动关闭扬声器，保护电脑不被（同事、同学、舍友、熊孩子！）干扰，远程控制过程中远程工具可以穿透屏保，不被影响，且在远程界面上角有持续隐私屏是否开启提示，使用更安心
 
 **English Summary:** PrivacyScreen is a lightweight, open-source Windows privacy overlay for remote-desktop workflows. It shows a configurable screensaver on local monitors, excludes that overlay from compatible screen capture, differentiates low-level injected versus physical input, and keeps an optional remote-visible dog-head indicator. Version 1.3 adds crash-recoverable muting of probable built-in speakers. This is a privacy convenience tool, **not** a Windows security lock.
 
@@ -77,8 +77,7 @@ GitHub Actions 的 `windows-latest` 构建也会自动产生 `PrivacyScreen-win-
 - 仅在**所有屏保窗口成功保护**之后静音；没有匹配端点、属性读取或 Core Audio 调用失败都只记录 `Audio:` 日志，不会让屏保回滚。
 - 对每个选中端点读取 `GetMute`。原本已经静音的端点不变，其他端点先把 `Id`、`Name`、`OriginalMute=false` 写入 `%LOCALAPPDATA%\PrivacyScreen\audio-restore.json`，再调用 `SetMute(true)`。**不读写音量数值**。
 - 解锁时只对记载的端点恢复为原 Mute；未能恢复的条目保留。进程被强制结束时，**下一次启动会优先尝试恢复**。若音频设备当时未连接、端点 ID 已变化或恢复失败，记录会保留供下次重试。未锁定且有剩余记录时，托盘会出现「恢复扬声器」手动入口。
-- 如果设置关闭静音，未来锁定不会主动查询或修改音频；**但此前的崩溃恢复记录仍会在下次启动时处理**，避免丢失声音。
-- **UU 等远程软件使用 WASAPI loopback 时是否仍能听见声音，取决于远程采集路径及端点静音实现，不能保证**；需要实机测试。某些独占模式或硬件驱动的路径也可能不同；常规本地扬声器静音以目标端点支持的 Core Audio Mute 为准。
+- 如果设置关闭静音，未来锁定不会主动查询或修改音频；**但此前的崩溃恢复记录仍会在下次启动时处理**，避免丢失声音。。
 - 原状态已静音的端点永不被解除静音。异常强杀后如果用户在屏保期间通过其他工具手动改过相同端点的 Mute，恢复记录仍会按锁定前状态处理；这是基于快照的已知取舍。
 
 ## 已知局限与安全边界
