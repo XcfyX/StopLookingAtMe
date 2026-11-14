@@ -96,6 +96,4 @@ GitHub Actions 的 `windows-latest` 构建也会自动产生 `PrivacyScreen-win-
 
 ## 版本与贡献
 
-版本记录见 [CHANGELOG.md](CHANGELOG.md)，手动与回归清单见 [docs/TESTING.md](docs/TESTING.md)。欢迎通过 Issue 反馈 UU 远程兼容性、Windows 版本、设备 FormFactor/Topology（**请删去私人路径及可识别信息**）。
-
-未来可以考虑：音频端点预览/白名单、端点重连时提醒、更多屏保画面配置。
+版本记录见 [CHANGELOG.md](CHANGELOG.md)，手动与回归清单见 [docs/TESTING.md](docs/TESTING.md)。欢迎通过 Issue 反馈 UU 远程兼容性、Windows 版本、设备 FormFactor/Topology
