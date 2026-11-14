@@ -1,6 +1,6 @@
-# PrivacyScreen
+# 能别看我了不？(Can You Stop Looking At Me?)
 
-**面向AI agent持续工作、远程桌面使用场景的 Windows 一键隐私屏保**：本地屏幕显示持续运行的屏保，同时允许兼容的远程控制软件查看并操作真实桌面。适用于Todesk，向日葵，uu远程，相对于自带的隐私屏功能可以在退出远程期间持续保护屏幕内容以及自动关闭扬声器，保护电脑不被（同事、同学、舍友、熊孩子！）干扰，远程控制过程中远程工具可以穿透屏保，不被影响，且在远程界面上角有持续隐私屏是否开启提示，使用更安心
+**隐私屏 · PrivacyScreen** —— 面向AI agent持续工作、远程桌面使用场景的 Windows 一键隐私屏保：本地屏幕显示持续运行的屏保，同时允许兼容的远程控制软件查看并操作真实桌面。适用于Todesk，向日葵，uu远程，相对于自带的隐私屏功能可以在退出远程期间持续保护屏幕内容以及自动关闭扬声器，保护电脑不被（同事、同学、舍友、熊孩子！）干扰，远程控制过程中远程工具可以穿透屏保，不被影响，且在远程界面上角有持续隐私屏是否开启提示，使用更安心
 
 **English Summary:** PrivacyScreen is a lightweight, open-source Windows privacy overlay for remote-desktop workflows. It shows a configurable screensaver on local monitors, excludes that overlay from compatible screen capture, differentiates low-level injected versus physical input, and keeps an optional remote-visible dog-head indicator. Version 1.3 adds crash-recoverable muting of probable built-in speakers. This is a privacy convenience tool, **not** a Windows security lock.
 
