@@ -1,6 +1,6 @@
 # PrivacyScreen 手动验证与回归清单
 
-**适用：v1.3 / Windows 10 2004+、Windows 11 / .NET 8 / x64。**
+**适用：v1.4 / Windows 10 2004+、Windows 11 / .NET 8 / x64。**
 
 本仓库的 GitHub Actions 负责构建，不包含 Windows GUI、音频端点或网易 UU 的自动化实机验收。建议每次升级前备份 `%LOCALAPPDATA%\PrivacyScreen\config.json`，并确认有通过 `Ctrl+Alt+Del` 注销或重新启动的应急途径。
 
@@ -41,7 +41,20 @@
 - [ ] 启动恢复适用于当前配置关闭静音开关的情形（恢复以前的崩溃状态属例外）。
 - [ ] 比较网易 UU 远程端是否仍能听到 WASAPI loopback 音频；**此项结果依赖 UU 实际采集路径，可能成功也可能失效**。
 
-## 5. 应急处理与收集日志
+## 5. 无边框全屏 Z 序保护（v1.4）
+
+- [ ] 从 v1.3.2 的 `config.json` 直接升级：无需重新输入密码，保存设置后新增 `FullscreenGuardEnabled: true`；关闭开关后不会启动看门狗。
+- [ ] 锁定成功日志出现 `Guard: started mode=WinEvent+timer`、`hooks=3/3`（如果事件注册失败，必须记录错误且仍有定时器兜底）。
+- [ ] **锁定之后**启动常规 Unity FullScreenWindow/其他无边框置顶全屏游戏：本地屏保重新覆盖、远程仍能正常操作游戏，游戏焦点保持不变。
+- [ ] 另用自制置顶全屏测试窗验证：即使新窗口位于任一盾窗上方，日志 `Guard: reasserted` 包含其进程名、标题和真实重叠尺寸；隔 2 秒内不会连续刷同类重申日志。
+- [ ] 多显示器分别启动越界/重叠窗口，任一盾窗被遮挡都会按顺序重新置顶全部盾窗、最后狗头。
+- [ ] 1×1 壳窗口、最小化、不可见、DWM Cloaked 或完全位于其他显示器且无实际交集的窗口不触发置顶。
+- [ ] 锁定时按本地 Ctrl+Alt+U 输入密码：密码卡片仍位于盾窗之内，没有被看门狗盖住；解锁开始时立即停止 Guard。
+- [ ] 使用 Windows 安全屏幕/任务管理器尝试应急恢复：`Guard: emergency window respected`，不要与 Taskmgr / Process Explorer 等不断争抢层级。
+- [ ] 如果游戏是真正独占全屏，记录无法保证覆盖这一局限，不要强制修改游戏显示设置。
+- [ ] 关闭、解锁、锁定失败、重复开启等生命周期路径没有残留 WinEvent hook、定时器或狗头。
+
+## 6. 应急处理与收集日志
 
 - 若无法正常解锁，可通过 `Ctrl+Alt+Del` 进入 Windows 安全界面后注销/重启或使用任务管理器结束程序。它不是不可绕过的安全锁。
 - 如果被动静音没有恢复：关闭屏保后打开托盘「恢复扬声器」；仍无法恢复时重启程序、检查设备是否重新连接。日志位置：`%LOCALAPPDATA%\PrivacyScreen\app.log`。

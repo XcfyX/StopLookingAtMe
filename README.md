@@ -2,7 +2,7 @@
 
 **隐私屏 · PrivacyScreen** —— 面向AI agent持续工作、远程桌面使用场景的 Windows 一键隐私屏保：本地屏幕显示持续运行的屏保，同时允许兼容的远程控制软件查看并操作真实桌面。适用于Todesk，向日葵，uu远程，相对于自带的隐私屏功能可以在退出远程期间持续保护屏幕内容以及自动关闭扬声器，保护电脑不被（同事、同学、舍友、熊孩子！）干扰，远程控制过程中远程工具可以穿透屏保，不被影响，且在远程界面上角有持续隐私屏是否开启提示，使用更安心
 
-**English Summary:** PrivacyScreen is a lightweight, open-source Windows privacy overlay for remote-desktop workflows. It shows a configurable screensaver on local monitors, excludes that overlay from compatible screen capture, differentiates low-level injected versus physical input, and keeps an optional remote-visible dog-head indicator. Version 1.3 adds crash-recoverable muting of probable built-in speakers. This is a privacy convenience tool, **not** a Windows security lock.
+**English Summary:** PrivacyScreen is a lightweight, open-source Windows privacy overlay for remote-desktop workflows. It shows a configurable screensaver on local monitors, excludes that overlay from compatible screen capture, differentiates low-level injected versus physical input, and keeps an optional remote-visible dog-head indicator. Version 1.3 adds crash-recoverable built-in speaker muting, and version 1.4 adds an event-driven plus periodic z-order watchdog for borderless fullscreen windows. This is a privacy convenience tool, **not** a Windows security lock.
 
 > **重要**：本工具不是系统级锁屏。`Ctrl+Alt+Del` 及安全桌面无法被普通用户进程拦截；同等权限的其他进程可以终止本程序。远程软件可能使用其他捕获或输入路径，网易 UU 远程等软件的兼容性需要按设备实测。
 
@@ -14,6 +14,7 @@
 - **独立图片库**：多选导入 PNG/JPEG/BMP，到 `%LOCALAPPDATA%\PrivacyScreen\images\` 按内容 SHA-256 去重，支持删除及清空。
 - **远程可见的狗头指示**：锁定后才显示，主屏左上或右上（默认右上），从屏幕边缘露出约 72%；支持替换自定义图片。
 - **内置扬声器静音**：v1.3 新增，成功锁定后尝试静音识别出的内置 Speakers 端点；解锁恢复原 Mute，强杀后下次启动自动按日志恢复；可关闭。
+- **无边框全屏防遮挡（v1.4）**：锁定期间由 WinEvent（前景/显示/Z 序重排）事件触发，并每 350ms 兜底扫描真实遮挡；仅重申本程序屏保盾和狗头的置顶层级，不抢焦点，不操作游戏窗口。
 - **可选开机自启**：仅当前 Windows 用户，托盘常驻。
 
 ## 工作原理
@@ -21,7 +22,8 @@
 1. 屏保窗口顶层显示、点击穿透且不抢焦点；调用并检查 `SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE)`，在兼容捕获链路中屏蔽本地屏保层。
 2. 全局低层钩子读取 `LLKHF_INJECTED` / `LLMHF_INJECTED`。物理输入被屏蔽（除本地解锁组合及密码输入流程），被标记为 injected 的输入可通过屏保层操作下方桌面。**Injected 不等于 UU 身份认证**；驱动级模拟 HID 的事件可能没有该标志。
 3. 指示图使用独立 `WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` 窗口，`UpdateLayeredWindow` 像素级 Alpha，**特意不调用捕获排除（WDA_NONE）**，以供远程端显示。
-4. 音频使用 Core Audio 的 `IMMDeviceEnumerator` / `IMMDevice` / `IAudioEndpointVolume.GetMute/SetMute`，只改变 Mute，不调整音量，不禁用 PnP 设备。仅在锁定成功后运行；是可失败降级的附属功能。
+4. 锁定成功后启动 Z 序看门狗：`SetWinEventHook(WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS)` 监听 `EVENT_SYSTEM_FOREGROUND`、`EVENT_OBJECT_SHOW`、`EVENT_OBJECT_REORDER`；同时使用 350ms WinForms 定时器。所有触发统一合并投递到 UI 线程，`EnumWindows` 按 Z 序检查外国窗口与每个盾窗的交集（宽、高均至少 100px）；忽略自身 PID、隐藏、最小化、DWM Cloaked 窗口。确有遮挡时依次 `SetWindowPos(HWND_TOPMOST, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE)` 所有盾窗，再重申狗头；日志前缀为 `Guard:`，同类动作至少间隔 2 秒记录。遇到任务管理器等紧急恢复工具时让行。
+5. 音频使用 Core Audio 的 `IMMDeviceEnumerator` / `IMMDevice` / `IAudioEndpointVolume.GetMute/SetMute`，只改变 Mute，不调整音量，不禁用 PnP 设备。仅在锁定成功后运行；是可失败降级的附属功能。
 
 参考：[SetWindowDisplayAffinity](https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity)、[音频端点 FormFactor](https://learn.microsoft.com/windows/win32/api/mmdeviceapi/ne-mmdeviceapi-endpointformfactor)、[SetMute](https://learn.microsoft.com/windows/win32/api/endpointvolume/nf-endpointvolume-iaudioendpointvolume-setmute)、[音频连接类型](https://learn.microsoft.com/windows/win32/api/devicetopology/ne-devicetopology-connectortype)。
 
@@ -66,9 +68,10 @@ GitHub Actions 的 `windows-latest` 构建也会自动产生 `PrivacyScreen-win-
 | `IndicatorPosition` | `RightTop` | `RightTop` / `LeftTop` |
 | `IndicatorImageFile` | `""` | 空表示内嵌默认图 |
 | **`MuteInternalSpeakersOnLock`** | **`true`** | v1.3 新增，锁定后尝试静音内置扬声器 |
+| **`FullscreenGuardEnabled`** | **`true`** | v1.4 新增；无边框全屏 Z 序看门狗，设置页「全屏兼容」可关闭 |
 | `PasswordSalt` / `PasswordHash` / `PasswordIterations` | 首次设置生成 | PBKDF2-SHA256 数据；升级及密码输入留空时不更改 |
 
-配置文件：`%LOCALAPPDATA%\PrivacyScreen\config.json`；日志：同目录 `app.log`。这些是**运行时私有文件**，源码仓库不包含真实配置、个人图片库或日志。老 v1.2.1 配置反序列化时会取新字段默认值，保存设置后写入新字段，不重设密码、不改变已有屏保/狗头设置。升级前建议手动备份用户配置文件。
+配置文件：`%LOCALAPPDATA%\PrivacyScreen\config.json`；日志：同目录 `app.log`。这些是**运行时私有文件**，源码仓库不包含真实配置、个人图片库或日志。老版本配置反序列化时会取新增字段默认值，保存设置后写入新字段，不重设密码、不改变已有屏保/狗头设置。升级前建议手动备份用户配置文件。
 
 ## v1.3 音频识别与恢复
 
@@ -84,6 +87,9 @@ GitHub Actions 的 `windows-latest` 构建也会自动产生 `PrivacyScreen-win-
 
 - **不是系统安全锁**：`Ctrl+Alt+Del` 无法拦截，任务管理器/同权限进程/管理权限进程可关闭本工具。不要用它保护高敏感数据或替代 Windows 锁定。
 - `WDA_EXCLUDEFROMCAPTURE` 不是 DRM，也不覆盖所有截屏、GPU、驱动或物理摄像头捕获路径；网易 UU 的捕获和输入机制随版本/配置可能变化。
+- **无边框全屏（包括常规 DWM 合成的 Unity FullScreenWindow）**：v1.4 会在探测到后来创建或提升的置顶窗口遮挡盾窗时按需恢复层级；事件反馈可能有微小延迟，定时兜底最长约 350ms 加上调度延迟，因此极短时间内仍可能露出游戏画面；与同样持续置顶的软件竞争时可能短暂闪烁。
+- **真正独占全屏（DirectX exclusive 等绕过常规合成的情况）**：普通 Win32 覆盖窗无法保证盖住；请把游戏切为**无边框全屏**。Independent Flip/MPO 是否需要回到合成视具体显卡和 Windows 版本而定。
+- 遇到任务管理器、Process Explorer 等紧急恢复窗口处于前景或在盾窗上方时，看门狗会暂停本轮层级争抢，以保留救援入口；这可能让本地暂时看到这些窗口。
 - 各显示器的屏保窗口能够捕获排除，不保证其他软件会显示指示图；音频 loopback 的行为单独待验证。
 - 没有系统级物理与远程输入身份验证；任何能产生 injected 标志的进程输入都可能被放行。驱动级 HID 远程输入也可能被误当实体键盘拦截。
 - Windows 的设备拓扑属性依赖驱动，内置扬声器识别只能尽力而为；断开或被重新编号的音频设备可能需要重新连接才能完成恢复。

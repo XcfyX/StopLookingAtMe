@@ -34,6 +34,8 @@ internal sealed class SettingsForm : Form
     private readonly CheckBox _autostart = new() { Text = "登录 Windows 时启动", AutoSize = true };
     private readonly CheckBox _muteSpeakers = new()
         { Text = "锁定时静音内置扬声器（解锁后恢复原静音状态）", AutoSize = true };
+    private readonly CheckBox _fullscreenGuardEnabled = new()
+        { Text = "启用无边框全屏 Z 序保护（WinEvent + 350ms 定时兜底）", AutoSize = true };
     private readonly TextBox _newPassword = new() { Dock = DockStyle.Fill, UseSystemPasswordChar = true };
     private readonly TextBox _confirmPassword = new() { Dock = DockStyle.Fill, UseSystemPasswordChar = true };
     private readonly CheckBox _indicatorEnabled = new()
@@ -66,6 +68,7 @@ internal sealed class SettingsForm : Form
         _message.Text = config.Message;
         _autostart.Checked = config.AutoStart;
         _muteSpeakers.Checked = config.MuteInternalSpeakersOnLock;
+        _fullscreenGuardEnabled.Checked = config.FullscreenGuardEnabled;
         _indicatorEnabled.Checked = config.ShowLockIndicator;
         _indicatorPosition.Items.AddRange(new object[] { "右上角 · 从右侧探出", "左上角 · 从左侧探出（水平镜像）" });
         _indicatorPosition.SelectedIndex = config.IndicatorPosition == "LeftTop" ? 1 : 0;
@@ -142,12 +145,34 @@ internal sealed class SettingsForm : Form
         var audioTab = new TabPage("扬声器");
         audioTab.Controls.Add(BuildAudioSettings());
         tabs.TabPages.Add(audioTab);
+        var guardTab = new TabPage("全屏兼容");
+        guardTab.Controls.Add(BuildGuardSettings());
+        tabs.TabPages.Add(guardTab);
         Controls.Add(tabs);
         Controls.Add(footer);
         AcceptButton = save;
         CancelButton = cancel;
         FormClosed += (_, _) => CleanupStaging();
         RefreshImageList();
+    }
+
+    private Control BuildGuardSettings()
+    {
+        var panel = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown,
+            WrapContents = false, Padding = new Padding(24, 25, 24, 10)
+        };
+        panel.Controls.Add(_fullscreenGuardEnabled);
+        panel.Controls.Add(new Label
+        {
+            Width = 660, Height = 110, ForeColor = Color.DimGray,
+            Text = "锁定成功后监听前景变化、窗口显示、Z 序重排事件，且每 350ms 兜底检查。\n" +
+                "仅当外部可见窗口实际遮挡盾窗至少约 100×100 像素时，才重新置顶本程序的盾窗和狗头；" +
+                "不会激活窗口或改变游戏的位置、尺寸。\n" +
+                "对任务管理器等紧急恢复工具让行。真独占全屏不保证覆盖，建议改用无边框全屏。"
+        });
+        return panel;
     }
 
     private Control BuildAudioSettings()
@@ -459,6 +484,7 @@ internal sealed class SettingsForm : Form
             next.Message = _message.Text.Trim();
             next.AutoStart = _autostart.Checked;
             next.MuteInternalSpeakersOnLock = _muteSpeakers.Checked;
+            next.FullscreenGuardEnabled = _fullscreenGuardEnabled.Checked;
             next.ShowLockIndicator = _indicatorEnabled.Checked;
             next.IndicatorPosition = _indicatorPosition.SelectedIndex == 1 ? "LeftTop" : "RightTop";
             next.IndicatorImageFile = _useDefaultIndicator ? "" :

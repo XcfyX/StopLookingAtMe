@@ -21,6 +21,7 @@ public sealed class AppConfig
     public string IndicatorPosition { get; set; } = "RightTop"; // RightTop / LeftTop
     public string IndicatorImageFile { get; set; } = ""; // 空=内嵌默认；仅允许 indicator-user-<sha256>.png
     public bool MuteInternalSpeakersOnLock { get; set; } = true; // v1.3 缺省开启
+    public bool FullscreenGuardEnabled { get; set; } = true; // v1.4 缺省开启，旧 config 可直接读取
     public string PasswordSalt { get; set; } = "";
     public string PasswordHash { get; set; } = "";
     public int PasswordIterations { get; set; } = 310_000;
@@ -72,6 +73,7 @@ public sealed class AppConfig
         IndicatorPosition = IndicatorPosition,
         IndicatorImageFile = IndicatorImageFile,
         MuteInternalSpeakersOnLock = MuteInternalSpeakersOnLock,
+        FullscreenGuardEnabled = FullscreenGuardEnabled,
         PasswordSalt = PasswordSalt,
         PasswordHash = PasswordHash,
         PasswordIterations = PasswordIterations
@@ -91,6 +93,7 @@ public sealed class AppConfig
         IndicatorPosition = source.IndicatorPosition;
         IndicatorImageFile = source.IndicatorImageFile;
         MuteInternalSpeakersOnLock = source.MuteInternalSpeakersOnLock;
+        FullscreenGuardEnabled = source.FullscreenGuardEnabled;
         PasswordSalt = source.PasswordSalt;
         PasswordHash = source.PasswordHash;
         PasswordIterations = source.PasswordIterations;

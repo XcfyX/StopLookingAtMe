@@ -20,6 +20,7 @@ internal sealed class PrivacyContext : ApplicationContext
     private readonly StringBuilder _entered = new();
     private InputHooks? _hooks;
     private IndicatorWindow? _indicator;
+    private FullscreenGuard? _fullscreenGuard;
     private Hotkey _unlockKey;
     private bool _locked;
     private bool _prompt;
@@ -139,6 +140,7 @@ internal sealed class PrivacyContext : ApplicationContext
                 AudioMuteManager.MuteForLock();
             }
             else Log.Write("Audio: enabled=false, endpointsChanged=0");
+            StartGuardAfterSuccessfulLock();
         }
         catch (Exception e)
         {
@@ -147,6 +149,28 @@ internal sealed class PrivacyContext : ApplicationContext
             MessageBox.Show("屏保开启失败，已撤销钩子并恢复桌面。\n\n" + e.Message +
                 "\n\n日志：" + Path.Combine(AppConfig.Root, "app.log"),
                 "PrivacyScreen", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void StartGuardAfterSuccessfulLock()
+    {
+        if (!_config.FullscreenGuardEnabled)
+        {
+            Log.Write("Guard: enabled=false, no z-order watchdog started");
+            return;
+        }
+        try
+        {
+            _fullscreenGuard = new FullscreenGuard(_shields, () => _indicator);
+            _fullscreenGuard.Start();
+        }
+        catch (Exception ex)
+        {
+            // The watchdog is optional; failure must never revoke the established lock.
+            Log.Write("Guard: start degraded, lock remains active: " + ex);
+            try { _fullscreenGuard?.Dispose(); }
+            catch (Exception disposeEx) { Log.Write("Guard: cleanup degraded: " + disposeEx); }
+            _fullscreenGuard = null;
         }
     }
 
@@ -301,6 +325,10 @@ internal sealed class PrivacyContext : ApplicationContext
 
     private void StopLock()
     {
+        // First stop event hooks and timer before changing the shield HWNDs.
+        try { _fullscreenGuard?.Dispose(); }
+        catch (Exception e) { Log.Write("Guard: stop degraded: " + e); }
+        _fullscreenGuard = null;
         // 先令锁定状态结束，再卸载所有钩子，最后拆除屏保窗口。
         _locked = false;
         // 解锁/失败回滚时优先撤销远程可见图，避免状态错误残留。
