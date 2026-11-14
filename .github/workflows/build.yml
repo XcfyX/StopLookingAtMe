@@ -1,0 +1,39 @@
+name: Build Windows x64
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish standalone EXE
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: PrivacyScreen.WinForms
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore Windows x64 dependencies
+        run: dotnet restore .\PrivacyScreen.csproj -r win-x64 -p:SelfContained=true
+      - name: Publish self-contained single-file EXE
+        run: >-
+          dotnet publish .\PrivacyScreen.csproj -c Release -r win-x64 --no-restore
+          --self-contained true -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=None -p:DebugSymbols=false
+          -o .\publish
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrivacyScreen-win-x64
+          path: PrivacyScreen.WinForms/publish/PrivacyScreen.exe
+          if-no-files-found: error
+          retention-days: 30

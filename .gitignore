@@ -1,0 +1,30 @@
+# .NET and Visual Studio
+**/bin/
+**/obj/
+**/publish/
+**/.vs/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.csproj.user
+*.pdb
+*.cache
+TestResults/
+
+# User runtime data (normally lives in %LOCALAPPDATA%/PrivacyScreen)
+config.json
+app.log
+app.log.*
+audio-restore.json
+indicator-user-*.png
+**/.import-staging/
+**/images/
+# Never ignore the actual embedded, documented default asset:
+!PrivacyScreen.WinForms/Assets/indicator-default.png
+
+# Editor/OS noise
+.DS_Store
+Thumbs.db
+*.tmp
